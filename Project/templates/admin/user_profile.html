@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Admin — User Profile</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <style>
+    :root{
+      --bg1:#0f1724;
+      --bg2:#102033;
+      --card: rgba(255,255,255,0.03);
+      --muted:#aeb6c2;
+      --accent:#43cea2;
+    }
+    html,body{height:100%;margin:0;font-family:"Segoe UI",sans-serif;
+      background:linear-gradient(135deg,var(--bg1),var(--bg2));color:#fff}
+    .wrap{max-width:1100px;margin:28px auto;padding:22px}
+    .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+    .title{font-size:1.35rem;font-weight:700}
+    .logout-btn{background:#ff4d4d;border:none;color:#fff;padding:8px 12px;border-radius:8px;text-decoration:none}
+    .card-panel{background:var(--card);padding:18px;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.45);margin-bottom:20px}
+    .small-muted{color:var(--muted)}
+    .btn-action{margin-right:8px}
+    table.data-table{width:100%;border-collapse:collapse;margin-top:10px}
+    table.data-table thead th{color:var(--muted);padding:10px;border-bottom:1px solid rgba(255,255,255,0.08)}
+    table.data-table tbody td{padding:10px;border-bottom:1px solid rgba(255,255,255,0.04)}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <div>
+        <div class="title">👤 User Profile</div>
+        <div class="small-muted">Details, datasets & reports of this user</div>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center">
+        <a href="{{ url_for('admin_users') }}" class="btn btn-outline-light">⬅ Back</a>
+        <a href="{{ url_for('index') }}" class="btn btn-outline-light">🏠 Main</a>
+        <a href="{{ url_for('logout') }}" class="logout-btn">🚪 Logout</a>
+      </div>
+    </div>
+
+    <!-- User Info -->
+    <div class="card-panel">
+      <h5>User Information</h5>
+      <p><strong>Name:</strong> {{ user.name }}</p>
+      <p><strong>Email:</strong> {{ user.email }}</p>
+      <p><strong>Last Active:</strong>
+        {% if user.last_active %}
+          {{ user.last_active.strftime('%Y-%m-%d %H:%M') }}
+        {% else %}
+          <span class="small-muted">—</span>
+        {% endif %}
+      </p>
+      <p><strong>Status:</strong>
+        {% if user.active %}
+          ✅ Active
+        {% else %}
+          ❌ Deactivated
+        {% endif %}
+      </p>
+
+      <div style="margin-top:14px">
+        <a class="btn btn-warning btn-action" href="/admin/users/{{ user.id }}/deactivate" onclick="return confirm('Deactivate user {{ user.name }}?');">⛔ Deactivate</a>
+        <a class="btn btn-danger btn-action" href="/admin/users/{{ user.id }}/delete" onclick="return confirm('Delete user {{ user.name }}? This cannot be undone.');">🗑️ Delete</a>
+        <a class="btn btn-info btn-action" href="/admin/users/{{ user.id }}/reset_password">🔑 Reset Password</a>
+      </div>
+    </div>
+
+    <!-- Datasets -->
+    <div class="card-panel">
+      <h5>📂 Datasets Uploaded</h5>
+      {% if datasets %}
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>File Name</th>
+            <th>Uploaded On</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for ds in datasets %}
+          <tr>
+            <td>{{ ds.id }}</td>
+            <td>{{ ds.file_name }}</td>
+            <td>{{ ds.upload_date.strftime('%Y-%m-%d %H:%M') if ds.upload_date else '-' }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+        <p class="small-muted">No datasets uploaded.</p>
+      {% endif %}
+    </div>
+
+    <!-- Reports -->
+    <div class="card-panel">
+      <h5>📊 Reports Generated</h5>
+      {% if reports %}
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Report Name</th>
+            <th>Created On</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for rpt in reports %}
+          <tr>
+            <td>{{ rpt.id }}</td>
+            <td>{{ rpt.name or 'Report' }}</td>
+            <td>{{ rpt.created_at.strftime('%Y-%m-%d %H:%M') if rpt.created_at else '-' }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+        <p class="small-muted">No reports generated.</p>
+      {% endif %}
+    </div>
+  </div>
+</body>
+</html>

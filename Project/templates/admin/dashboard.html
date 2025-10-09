@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Admin Dashboard</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg1:#0f1724;
+      --bg2:#102033;
+      --card: rgba(255,255,255,0.05);
+      --muted:#aeb6c2;
+      --accent:#43cea2;
+      --accent2:#185a9d;
+    }
+    html,body {
+      height:100%;
+      margin:0;
+      font-family:"Segoe UI",sans-serif;
+      background:linear-gradient(135deg,var(--bg1),var(--bg2));
+      color:#fff;
+    }
+    .wrap {
+      max-width:1200px;
+      margin:28px auto;
+      padding:22px;
+    }
+    .topbar {
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      margin-bottom:20px;
+    }
+    .title {
+      font-size:1.6rem;
+      font-weight:700;
+    }
+    .logout-btn {
+      background:#ff4d4d;
+      border:none;
+      color:#fff;
+      padding:8px 14px;
+      border-radius:8px;
+      text-decoration:none;
+      font-weight:600;
+    }
+    .stats-row {
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+      gap:16px;
+      margin-bottom:20px;
+    }
+    .stat-card {
+      padding:18px;
+      border-radius:14px;
+      background:var(--card);
+      text-align:center;
+      transition:all .25s ease;
+      box-shadow:0 6px 20px rgba(0,0,0,0.5);
+    }
+    .stat-card:hover {
+      transform:translateY(-5px) scale(1.02);
+      box-shadow:0 12px 32px rgba(0,0,0,0.65);
+    }
+    .stat-card h2 {
+      color:var(--accent);
+      margin:0;
+      font-size:2rem;
+    }
+    .stat-card p {
+      margin:6px 0 0 0;
+      color:var(--muted);
+    }
+    .actions-row {
+      display:flex;
+      flex-wrap:wrap;
+      gap:12px;
+      margin-bottom:24px;
+    }
+    .action-btn {
+      flex:1;
+      min-width:160px;
+      padding:14px;
+      border-radius:10px;
+      background:linear-gradient(90deg,var(--accent),var(--accent2));
+      border:none;
+      color:#fff;
+      font-weight:600;
+      text-align:center;
+      text-decoration:none;
+      transition:all .2s ease;
+    }
+    .action-btn:hover {
+      transform:translateY(-3px);
+      box-shadow:0 10px 28px rgba(67,206,162,0.3);
+      color:#fff;
+    }
+    .activity-box {
+      background:var(--card);
+      padding:16px;
+      border-radius:12px;
+      box-shadow:0 8px 26px rgba(0,0,0,0.55);
+    }
+    .activity-item {
+      padding:10px;
+      border-bottom:1px solid rgba(255,255,255,0.06);
+    }
+    .activity-item:last-child { border-bottom:none; }
+    .activity-time {
+      font-size:0.8rem;
+      color:var(--muted);
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <div class="title">⚡ Admin Dashboard</div>
+      <a href="{{ url_for('logout') }}" class="logout-btn">🚪 Logout</a>
+    </div>
+
+    <!-- Stats Row -->
+    <div class="stats-row">
+      <div class="stat-card">
+        <h2>{{ users_count or 0 }}</h2>
+        <p>Users</p>
+      </div>
+      <div class="stat-card">
+        <h2>{{ datasets_count or 0 }}</h2>
+        <p>Datasets</p>
+      </div>
+      <div class="stat-card">
+        <h2>{{ reviews_count or 0 }}</h2>
+        <p>Reviews</p>
+      </div>
+      <div class="stat-card">
+        <h2>{{ active_users_today or 0 }}</h2>
+        <p>Active Today</p>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="actions-row">
+      <a href="/admin/users" class="action-btn">👥 Manage Users</a>
+      <a href="/admin/aspects" class="action-btn">⚙️ Aspects</a>
+      <a href="/admin/monitor" class="action-btn">📈 Monitor</a>
+      <a href="/admin/insights" class="action-btn">📊 Insights & Visuals</a> 
+      <a href="/admin/reports" class="action-btn">📄 Reports</a>
+    </div>
+
+    <!-- Activity Log -->
+    <div class="activity-box">
+      <h5>🕒 Recent Activity</h5>
+      <div style="max-height:300px;overflow:auto;margin-top:10px">
+        {% if recent_logs %}
+          {% for l in recent_logs %}
+            <div class="activity-item">
+              <div>{{ l.action_type or '-' }}</div>
+              <div class="activity-time">
+                {{ l.timestamp.strftime('%Y-%m-%d %H:%M') if l.timestamp else '' }}
+              </div>
+            </div>
+          {% endfor %}
+        {% else %}
+          <div class="activity-item text-muted">No recent activity.</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast popup -->
+  <div class="toast-container position-fixed top-0 end-0 p-3">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="toast align-items-center text-bg-{{ 'success' if category=='success' else 'danger' }} border-0"
+               role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="5000">
+            <div class="d-flex">
+              <div class="toast-body">{{ message }}</div>
+              <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    const toasts = document.querySelectorAll('.toast');
+    toasts.forEach(t => new bootstrap.Toast(t).show());
+  </script>
+</body>
+</html>

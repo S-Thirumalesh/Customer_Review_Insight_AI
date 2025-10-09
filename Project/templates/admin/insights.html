@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Admin — Insights & Visuals</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.3.0/dist/chart.umd.min.js"></script>
+
+  <style>
+    :root{
+      --bg1:#0f1724; --bg2:#102033;
+      --card: rgba(255,255,255,0.06);
+      --positive:#28a745; --negative:#ff4d4d; --neutral:#adb5bd;
+      --muted:#aeb6c2; --accent:#43cea2; --accent2:#185a9d;
+    }
+    html,body{height:100%;margin:0;font-family:"Segoe UI",sans-serif;background:linear-gradient(135deg,var(--bg1),var(--bg2));color:#fff}
+    .wrap{max-width:1200px;margin:28px auto;padding:22px}
+    .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+    .title{font-size:1.6rem;font-weight:700}
+    .back-btn{background:transparent;border:1px solid rgba(255,255,255,0.14);color:#fff;padding:8px 12px;border-radius:8px;text-decoration:none}
+    .logout-btn{background:#ff4d4d;border:none;color:#fff;padding:8px 12px;border-radius:8px;text-decoration:none}
+    .card-ghost{background:var(--card);border-radius:12px;padding:16px;box-shadow:0 10px 30px rgba(0,0,0,0.6)}
+    .stat-pill{display:inline-block;padding:10px 14px;border-radius:12px;background:rgba(255,255,255,0.08);margin-right:10px}
+    .charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+    .chart-wrap{background:var(--card);padding:14px;border-radius:12px}
+    .small-muted{color:var(--muted)}
+    @media (max-width:900px){.charts-grid{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <div class="title">📊 Admin — Insights & Visuals</div>
+      <div style="display:flex;gap:10px">
+        <a class="back-btn" href="{{ url_for('admin_dashboard') }}">← Dashboard</a>
+        <a class="logout-btn" href="{{ url_for('logout') }}">🚪 Logout</a>
+      </div>
+    </div>
+
+    <div class="card-ghost mb-3">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
+        <div>
+          <div class="small-muted">System-wide overview (all users & reviews)</div>
+        </div>
+        <div>
+          <span class="stat-pill">Users: <strong>{{ users_count or 0 }}</strong></span>
+          <span class="stat-pill">Datasets: <strong>{{ datasets_count or 0 }}</strong></span>
+          <span class="stat-pill">Reviews: <strong>{{ reviews_count or 0 }}</strong></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="charts-grid">
+      <div class="chart-wrap">
+        <h6>Sentiment Distribution</h6>
+        <canvas id="pieChart"></canvas>
+      </div>
+      <div class="chart-wrap">
+        <h6>Top Aspects — Sentiment</h6>
+        <canvas id="aspectBar"></canvas>
+      </div>
+      <div class="chart-wrap" style="grid-column:1/-1">
+        <h6>Trend Over Time</h6>
+        <canvas id="trendLine"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Data from server
+    const SENT_COUNTS = {{ sentiment_counts|tojson|safe }};
+    const ASPECT_STATS = {{ aspect_stats|tojson|safe }};
+    const TREND_LABELS = {{ trend_labels|tojson|safe }};
+    const TREND_POS = {{ trend_pos_values|tojson|safe }};
+    const TREND_NEG = {{ trend_neg_values|tojson|safe }};
+    const TREND_NEU = {{ trend_neu_values|tojson|safe }};
+
+    // Pie (Sentiment Distribution)
+    new Chart(document.getElementById('pieChart'), {
+      type:'doughnut',
+      data:{
+        labels:['Positive','Negative','Neutral'],
+        datasets:[{
+          data:[SENT_COUNTS.Positive||0,SENT_COUNTS.Negative||0,SENT_COUNTS.Neutral||0],
+          backgroundColor:['#28a745','#ff4d4d','#adb5bd'],
+          borderColor:'#fff', borderWidth:2
+        }]
+      },
+      options:{plugins:{legend:{labels:{color:'#fff'}}}}
+    });
+
+    // Bar (Aspect-wise Sentiment) — top 10 aspects
+    const labels = ASPECT_STATS.map(a=>a.aspect);
+    new Chart(document.getElementById('aspectBar'), {
+      type:'bar',
+      data:{
+        labels: labels,
+        datasets:[
+          {label:'Positive', data:ASPECT_STATS.map(a=>a.positive), backgroundColor:'#28a745'},
+          {label:'Negative', data:ASPECT_STATS.map(a=>a.negative), backgroundColor:'#ff4d4d'},
+          {label:'Neutral', data:ASPECT_STATS.map(a=>a.neutral),  backgroundColor:'#adb5bd'}
+        ]
+      },
+      options:{
+        plugins:{legend:{labels:{color:'#fff'}}},
+        scales:{
+          x:{ticks:{color:'#fff'}},
+          y:{ticks:{color:'#fff'}, beginAtZero:true}
+        }
+      }
+    });
+
+    // Line (Trend Over Time)
+    new Chart(document.getElementById('trendLine'), {
+      type:'line',
+      data:{
+        labels:TREND_LABELS,
+        datasets:[
+          {label:'Positive', data:TREND_POS, borderColor:'#28a745', backgroundColor:'rgba(40,167,69,0.2)', tension:0.4, fill:false},
+          {label:'Negative', data:TREND_NEG, borderColor:'#ff4d4d', backgroundColor:'rgba(255,77,77,0.2)', tension:0.4, fill:false},
+          {label:'Neutral',  data:TREND_NEU, borderColor:'#adb5bd', backgroundColor:'rgba(173,181,189,0.2)', tension:0.4, fill:false}
+        ]
+      },
+      options:{
+        plugins:{legend:{labels:{color:'#fff'}}},
+        scales:{
+          x:{ticks:{color:'#fff'}},
+          y:{ticks:{color:'#fff'}, beginAtZero:true}
+        }
+      }
+    });
+  </script>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

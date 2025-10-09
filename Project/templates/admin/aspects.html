@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Admin — Aspects</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg1: #0f1724;
+      --bg2: #102033;
+      --card: rgba(255, 255, 255, 0.04);
+      --muted: #aeb6c2;
+      --accent: #43cea2;
+      --danger: #ff6b6b;
+      --warning: #ffd166;
+    }
+    html,body{height:100%;margin:0;font-family:"Segoe UI",sans-serif;background:linear-gradient(135deg,var(--bg1),var(--bg2));color:#fff}
+    .wrap{max-width:1200px;margin:28px auto;padding:22px}
+    .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+    .title{font-size:1.35rem;font-weight:700}
+    .logout-btn{background:#ff4d4d;border:none;color:#fff;padding:8px 12px;border-radius:8px;text-decoration:none}
+    .card-panel{background:var(--card);padding:16px;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.45)}
+    .section-title{font-weight:600;font-size:1.1rem;margin-bottom:10px}
+    .aspect-item{padding:12px;border-radius:8px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center}
+    .aspect-item.positive{background:linear-gradient(90deg, rgba(0,200,83,0.08), rgba(0,150,93,0.04));}
+    .aspect-item.negative{background:linear-gradient(90deg, rgba(255,82,82,0.08), rgba(200,40,40,0.03));}
+    .aspect-item.neutral{background:linear-gradient(90deg, rgba(255,193,7,0.07), rgba(200,150,0,0.03));}
+    .aspect-name{font-weight:600;color:#eaf7ef}
+    .aspect-count{font-size:0.9rem;color:var(--muted);margin-top:4px}
+    .top-words{margin-top:8px}
+    .top-words .badge{margin-right:6px;background: rgba(255,255,255,0.08); color: #fff;}
+    .btn-add{background:linear-gradient(90deg,var(--accent),#185a9d);color:#fff;border:none}
+    .small-muted{color:var(--muted)}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <div>
+        <div class="title">Admin — Aspect Categories</div>
+        <div class="small-muted">View sentiment distribution across aspects (aggregated from user reviews)</div>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center">
+        <a href="{{ url_for('index') }}" class="btn btn-outline-light">🏠 Main</a>
+        <a href="{{ url_for('logout') }}" class="logout-btn">🚪 Logout</a>
+      </div>
+    </div>
+
+    <div class="card-panel mb-3 d-flex justify-content-between align-items-center">
+      <div class="small-muted">Aspects are aggregated from all analyzed reviews. Use Add to create custom aspects.</div>
+      <button class="btn btn-add" id="openAddBtn">➕ Add Aspect</button>
+    </div>
+
+    <div class="card-panel">
+      <div class="row">
+        <!-- Positive -->
+        <div class="col-md-4">
+          <div class="section-title text-success">😊 Positive</div>
+          {% if positive_aspects %}
+            {% for a in positive_aspects %}
+              <div class="aspect-item positive">
+                <div>
+                  <div class="aspect-name">{{ a.name }}</div>
+                  <div class="aspect-count">{{ a.positive }} positive • {{ a.count_total }} total</div>
+                  {% if a.top_words %}
+                    <div class="top-words">
+                      {% for w in a.top_words %}
+                        <span class="badge">{{ w }}</span>
+                      {% endfor %}
+                    </div>
+                  {% endif %}
+                </div>
+                <div>
+                  <button class="btn btn-sm btn-outline-light btn-edit" data-id="{{ a.name|urlencode }}" data-name="{{ a.name }}">✏️</button>
+                  <form method="post" action="/admin/aspects/{{ a.name|urlencode }}/delete" style="display:inline">
+                    <button class="btn btn-sm btn-danger" onclick="return confirm('Delete aspect {{ a.name }}?')">🗑️</button>
+                  </form>
+                </div>
+              </div>
+            {% endfor %}
+          {% else %}
+            <div class="small-muted">No positive aspects.</div>
+          {% endif %}
+        </div>
+
+        <!-- Negative -->
+        <div class="col-md-4">
+          <div class="section-title text-danger">😠 Negative</div>
+          {% if negative_aspects %}
+            {% for a in negative_aspects %}
+              <div class="aspect-item negative">
+                <div>
+                  <div class="aspect-name">{{ a.name }}</div>
+                  <div class="aspect-count">{{ a.negative }} negative • {{ a.count_total }} total</div>
+                  {% if a.top_words %}
+                    <div class="top-words">
+                      {% for w in a.top_words %}
+                        <span class="badge">{{ w }}</span>
+                      {% endfor %}
+                    </div>
+                  {% endif %}
+                </div>
+                <div>
+                  <button class="btn btn-sm btn-outline-light btn-edit" data-id="{{ a.name|urlencode }}" data-name="{{ a.name }}">✏️</button>
+                  <form method="post" action="/admin/aspects/{{ a.name|urlencode }}/delete" style="display:inline">
+                    <button class="btn btn-sm btn-danger" onclick="return confirm('Delete aspect {{ a.name }}?')">🗑️</button>
+                  </form>
+                </div>
+              </div>
+            {% endfor %}
+          {% else %}
+            <div class="small-muted">No negative aspects.</div>
+          {% endif %}
+        </div>
+
+        <!-- Neutral -->
+        <div class="col-md-4">
+          <div class="section-title text-warning">😐 Neutral</div>
+          {% if neutral_aspects %}
+            {% for a in neutral_aspects %}
+              <div class="aspect-item neutral">
+                <div>
+                  <div class="aspect-name">{{ a.name }}</div>
+                  <div class="aspect-count">{{ a.neutral }} neutral • {{ a.count_total }} total</div>
+                  {% if a.top_words %}
+                    <div class="top-words">
+                      {% for w in a.top_words %}
+                        <span class="badge">{{ w }}</span>
+                      {% endfor %}
+                    </div>
+                  {% endif %}
+                </div>
+                <div>
+                  <button class="btn btn-sm btn-outline-light btn-edit" data-id="{{ a.name|urlencode }}" data-name="{{ a.name }}">✏️</button>
+                  <form method="post" action="/admin/aspects/{{ a.name|urlencode }}/delete" style="display:inline">
+                    <button class="btn btn-sm btn-danger" onclick="return confirm('Delete aspect {{ a.name }}?')">🗑️</button>
+                  </form>
+                </div>
+              </div>
+            {% endfor %}
+          {% else %}
+            <div class="small-muted">No neutral aspects.</div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add/Edit Modal (simple) -->
+  <div class="modal" tabindex="-1" id="aspectModal">
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+      <div class="modal-content" style="background:var(--card);color:#fff;border:none">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalTitle">Add Aspect</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <form id="aspectForm" method="post" action="/admin/aspects/add">
+            <input type="hidden" name="aspect_id" id="aspect_id" value="">
+            <div class="mb-3">
+              <label class="form-label">Aspect name</label>
+              <input id="aspect_name" name="name" class="form-control" placeholder="e.g. Delivery" required>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button id="saveAspectBtn" type="button" class="btn btn-add">Save</button>
+          <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    const aspectModal = new bootstrap.Modal(document.getElementById('aspectModal'));
+
+    document.getElementById('openAddBtn')?.addEventListener('click', () => {
+      document.getElementById('modalTitle').innerText = 'Add Aspect';
+      document.getElementById('aspectForm').action = '/admin/aspects/add';
+      document.getElementById('aspect_id').value = '';
+      document.getElementById('aspect_name').value = '';
+      aspectModal.show();
+    });
+
+    document.querySelectorAll('.btn-edit').forEach(btn=>{
+      btn.addEventListener('click', () => {
+        const name = btn.dataset.name || '';
+        document.getElementById('modalTitle').innerText = 'Edit Aspect';
+        // We POST to /admin/aspects/edit/<id> - your app.py expects the id, so we pass the name back as aspect_id if you prefer
+        document.getElementById('aspectForm').action = `/admin/aspects/edit/${encodeURIComponent(name)}`;
+        document.getElementById('aspect_id').value = name;
+        document.getElementById('aspect_name').value = name;
+        aspectModal.show();
+      });
+    });
+
+    document.getElementById('saveAspectBtn').addEventListener('click', () => {
+      if (!document.getElementById('aspect_name').value.trim()) return;
+      document.getElementById('aspectForm').submit();
+    });
+  </script>
+</body>
+</html>

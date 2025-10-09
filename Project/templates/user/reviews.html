@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% block title %}Reviews - {{ dataset.file_name }}{% endblock %}
+{% block content %}
+<h5>Dataset: {{ dataset.file_name }}</h5>
+<a class="btn btn-sm btn-secondary mb-3" href="{{ url_for('analyze_dataset', dataset_id=dataset.id) }}">Run analysis</a>
+
+<table class="table table-sm table-striped">
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>Raw Review</th>
+      <th>Preprocessed</th>
+      <th>Sentiment</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for r in reviews %}
+      <tr>
+        <td>{{ loop.index }}</td>
+        <td style="max-width:400px;white-space:pre-wrap">{{ r.raw_text }}</td>
+        <td style="max-width:300px;white-space:pre-wrap">{{ r.preprocessed_text or '-' }}</td>
+        <td>{{ r.sentiment or 'Not analyzed' }}</td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

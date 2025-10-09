@@ -1,0 +1,8 @@
+flask
+flask-bcrypt
+flask-login
+flask-sqlalchemy
+pandas
+matplotlib
+seaborn
+reportlab

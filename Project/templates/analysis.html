@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Analysis - {{ dataset.file_name if dataset else "Dataset Analysis" }}</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.3.0/dist/chart.umd.min.js"></script>
+
+  <style>
+    :root{
+      --bg1:#1a2a6c; --bg2:#16222a; --bg3:#0f2027;
+      --card:rgba(255,255,255,0.06);
+      --positive:#28a745;
+      --negative:#ff4d4d;
+      --neutral:#e9ecef;
+      --amber:#ffca28;
+    }
+    html,body{
+      height:100%;
+      margin:0;
+      font-family:"Segoe UI",sans-serif;
+      background:linear-gradient(135deg,var(--bg1),var(--bg2),var(--bg3));
+      color:#fff;
+    }
+    /* make canvas crisp & ensure no CSS filter shadow */
+    canvas{filter:none!important;image-rendering:crisp-edges!important;image-rendering:pixelated!important;}
+    .container-xl{max-width:1200px;padding:22px}
+    .top-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+    .back-btn{background:transparent;border:1px solid rgba(255,255,255,0.06);color:#fff;padding:8px 12px;border-radius:8px;text-decoration:none}
+    .logout-btn{background:#ff4d4d;border:none;padding:8px 12px;border-radius:8px;color:#fff;text-decoration:none}
+    .card-ghost{background:var(--card);border-radius:12px;padding:16px;box-shadow:0 10px 30px rgba(0,0,0,0.6)}
+    .tabs-card{margin-top:12px;padding:12px;border-radius:12px}
+    .stat-pill{display:inline-block;padding:10px 14px;border-radius:12px;background:rgba(255,255,255,0.03);margin-right:10px}
+    .badge-pos{background:var(--positive);color:#fff;border-radius:8px;padding:6px 8px}
+    .badge-neg{background:var(--negative);color:#fff;border-radius:8px;padding:6px 8px}
+    .badge-ntrl{background:var(--neutral);color:#000;border-radius:8px;padding:6px 8px}
+    .form-control-dark{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.03);color:#fff;border-radius:8px;padding:8px}
+    table.data-table{width:100%;border-collapse:collapse}
+    table.data-table th,table.data-table td{padding:10px;border-bottom:1px solid rgba(255,255,255,0.03);color:#e9eef6}
+    .sent-badge{padding:6px 10px;border-radius:8px;font-weight:600}
+    .sent-pos{background:var(--positive);color:#fff}
+    .sent-neg{background:var(--negative);color:#fff}
+    .sent-ntrl{background:var(--neutral);color:#111}
+    .aspect-list{display:flex;gap:12px;flex-wrap:wrap}
+    .aspect-card{background:rgba(255,255,255,0.04);padding:12px;border-radius:10px;min-width:160px}
+    .charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+    .chart-wrap{background:var(--card);padding:14px;border-radius:12px}
+    .chart-wrap canvas{width:100%!important;height:300px!important}
+    .chart-wrap.line canvas{height:340px!important}
+    .export-actions{display:flex;gap:10px;flex-wrap:wrap}
+    .small-muted{color:#cbd5e1}
+    .nav-tabs .nav-link{color:#fff!important;font-weight:600;transition:all .3s}
+    .nav-tabs .nav-link:hover{color:#43cea2!important}
+    .nav-tabs .nav-link.active{color:#ffca28!important;background:transparent!important;border:none!important;border-bottom:3px solid #ffca28!important}
+    .reviews-hl-list{display:flex;flex-direction:column;gap:12px}
+    .rev-item{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:12px}
+    .rev-text{line-height:1.6;font-size:1rem}
+    .rev-meta{display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap}
+    .hl{font-weight:700;transition:color .15s}
+    .hl-pos{color:#28a745}
+    .hl-neg{color:#ff4d4d}
+    .hl-neu{color:#fff}
+    .hl:hover{text-decoration:underline}
+  </style>
+</head>
+<body>
+  <div class="container-xl">
+    <div class="top-row">
+      <div>
+        <a class="back-btn" href="{{ url_for('dashboard') }}">← Dashboard</a>
+        <span style="margin-left:12px" class="small-muted">Dataset: <strong>{{ dataset.file_name if dataset else '—' }}</strong></span>
+      </div>
+      <a class="logout-btn" href="{{ url_for('logout') }}">Logout</a>
+    </div>
+
+    <div class="card-ghost">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:15px">
+        <div>
+          <h3 style="margin:0">{{ dataset.file_name if dataset else "Analysis" }}</h3>
+          <div class="small-muted">Reviews, Aspects, Insights & Export</div>
+        </div>
+        <div>
+          <span class="stat-pill">Total Reviews: <strong>{{ reviews|length if reviews else 0 }}</strong></span>
+          <span class="stat-pill">Analyzed: <strong>{{ sentiment_counts.Positive + sentiment_counts.Negative + sentiment_counts.Neutral if sentiment_counts is defined else 0 }}</strong></span>
+        </div>
+      </div>
+
+      <div class="tabs-card">
+        <ul class="nav nav-tabs">
+          <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-reviews">Reviews</button></li>
+          <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-aspects">Aspect Analysis</button></li>
+          <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-insights">Insights & Visuals</button></li>
+          <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-export">Export</button></li>
+        </ul>
+
+        <div class="tab-content mt-3">
+          <!-- Reviews -->
+          <div class="tab-pane fade show active" id="tab-reviews">
+            <div class="search-row" style="display:flex;gap:10px;align-items:center">
+              <input id="searchInput" class="form-control-dark" placeholder="Search reviews...">
+              <div style="margin-left:auto">
+                <button id="refreshBtn" class="btn btn-primary ms-2">Refresh</button>
+              </div>
+            </div>
+            <div style="overflow:auto;max-height:460px">
+              <table class="data-table">
+                <thead>
+                  <tr><th>#</th><th>Raw</th><th>Preprocessed</th><th>Sentiment</th><th>Confidence %</th></tr>
+                </thead>
+                <tbody id="reviewsBody">
+                  {% for r in reviews %}
+                  {% set conf = r.confidence if r.confidence is defined else None %}
+                  <tr>
+                    <td>{{ loop.index }}</td>
+                    <td>{{ r.raw_text }}</td>
+                    <td>{{ r.preprocessed_text or '-' }}</td>
+                    <td>
+                      {% if r.sentiment == 'Positive' %}<span class="sent-badge sent-pos">Positive</span>
+                      {% elif r.sentiment == 'Negative' %}<span class="sent-badge sent-neg">Negative</span>
+                      {% else %}<span class="sent-badge sent-ntrl">Neutral</span>{% endif %}
+                    </td>
+                    <td>{% if conf is not none %}{{ (conf|float)|round(2) }}%{% else %}-{% endif %}</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Aspect Analysis -->
+          <div class="tab-pane fade" id="tab-aspects">
+            <h5>Aspect Sentiment Counts</h5>
+            <div class="aspect-list">
+              {% for a in aspect_stats %}
+              <div class="aspect-card">
+                <strong>{{ a.aspect }}</strong>
+                <div>Pos: <span class="badge badge-pos">{{ a.positive }}</span></div>
+                <div>Neg: <span class="badge badge-neg">{{ a.negative }}</span></div>
+                <div>Neu: <span class="badge badge-ntrl">{{ a.neutral }}</span></div>
+              </div>
+              {% else %}<div class="small-muted">No aspects found</div>{% endfor %}
+            </div>
+            <hr>
+            <div class="row">
+              <div class="col-md-6">
+                <h6>Top 5 Positive Words</h6>
+                <ol>{% for w in top_positive_words %}<li>{{ w[0] }} <small class="small-muted">({{ w[1] }})</small></li>{% else %}<li>No data</li>{% endfor %}</ol>
+              </div>
+              <div class="col-md-6">
+                <h6>Top 5 Negative Words</h6>
+                <ol>{% for w in top_negative_words %}<li>{{ w[0] }} <small class="small-muted">({{ w[1] }})</small></li>{% else %}<li>No data</li>{% endfor %}</ol>
+              </div>
+            </div>
+            <h5>Aspects in Reviews</h5>
+            <div id="aspectsInReviews" class="reviews-hl-list"></div>
+          </div>
+
+          <!-- Insights -->
+          <div class="tab-pane fade" id="tab-insights">
+            <div class="charts-grid mt-3">
+              <div class="chart-wrap"><h6>Sentiment Distribution</h6><canvas id="pieChart"></canvas></div>
+              <div class="chart-wrap"><h6>Aspect-wise Sentiment</h6><canvas id="aspectBar"></canvas></div>
+              <div class="chart-wrap line" style="grid-column:1/-1"><h6>Trend Over Time</h6><canvas id="trendLine"></canvas></div>
+            </div>
+          </div>
+
+          <!-- Export -->
+          <div class="tab-pane fade" id="tab-export">
+            <h5>Export</h5>
+            <div class="export-actions">
+              <a class="btn btn-outline-light" href="{{ export_csv_url }}">📄 CSV</a>
+              <a class="btn btn-primary" href="{{ export_pdf_url }}">📥 PDF</a>
+            </div>
+            <div class="small-muted mt-2">CSV includes all fields. PDF shows summary + sample reviews.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Data from Flask -->
+  <script>
+    const REVIEWS = {{ reviews|tojson | safe }};
+    const SENT_COUNTS = {{ sentiment_counts|tojson | safe }};
+    const ASPECT_STATS = {{ aspect_stats|tojson | safe }};
+    const TREND_LABELS = {{ trend_labels|tojson | safe }};
+    const TREND_POS = {{ trend_pos_values|tojson | safe }};
+    const TREND_NEG = {{ trend_neg_values|tojson | safe }};
+    const TREND_NEU = {{ trend_neu_values|tojson | safe }};
+  </script>
+
+  <!-- Dual highlighting -->
+  <script>
+    const POS_WORDS = new Set(["good","great","excellent","amazing","love","nice","happy","best","wonderful","satisfied","friendly","fantastic","awesome","perfect","brilliant","fast","quick","enjoy","positive","recommend","super","pleased","clean","smooth","helpful","comfortable","reliable","pleasant","better","engaging","organized"]);
+    const NEG_WORDS = new Set(["bad","poor","terrible","awful","hate","worst","disappointed","sad","angry","problem","slow","horrible","useless","waste","negative","dirty","late","annoying","issue","difficult","broken","refund","complaint","overpriced","noisy","cold","stain","crash","damaged","uncomfortable"]);
+    const ASPECT_TERMS = ["battery","camera","display","performance","service","staff","price","delivery","support","food","design","speed","quality","experience","venue","seating","product","packaging"];
+
+    function escapeHTML(s){return (s||'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]));}
+    function escRe(s){return s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');}
+    function highlightDual(text){
+      let html = escapeHTML(text||'');
+      POS_WORDS.forEach(w=>{html=html.replace(new RegExp(`\\b${escRe(w)}\\b`,'gi'),`<span class='hl hl-pos'>${w}</span>`);});
+      NEG_WORDS.forEach(w=>{html=html.replace(new RegExp(`\\b${escRe(w)}\\b`,'gi'),`<span class='hl hl-neg'>${w}</span>`);});
+      ASPECT_TERMS.forEach(w=>{html=html.replace(new RegExp(`\\b${escRe(w)}\\b`,'gi'),`<span class='hl hl-neu'>${w}</span>`);});
+      return html;
+    }
+
+    (function renderAspectsInReviews(){
+      const mount=document.getElementById('aspectsInReviews');
+      if(!mount) return;
+      const frag=document.createDocumentFragment();
+      REVIEWS.forEach(r=>{
+        const div=document.createElement('div');
+        div.className='rev-item';
+        const badge=r.sentiment==='Positive'
+          ? '<span class="badge badge-pos">Positive</span>'
+          : r.sentiment==='Negative'
+            ? '<span class="badge badge-neg">Negative</span>'
+            : '<span class="badge badge-ntrl">Neutral</span>';
+        div.innerHTML = `<div class='rev-text'>${highlightDual(r.raw_text||'')}</div><div class='rev-meta'>${badge}</div>`;
+        frag.appendChild(div);
+      });
+      mount.appendChild(frag);
+    })();
+  </script>
+
+  <!-- Charts -->
+  <script>
+    // Global clean defaults
+    Chart.defaults.elements.line.fill = false;
+    Chart.defaults.animation = false;
+
+    // Global plugin to nuke any canvas shadow/blur (root cause of the "shade")
+    const NoShadow = {
+      id: 'noShadow',
+      beforeDraw(chart,args,pluginOptions){
+        const ctx = chart.ctx;
+        ctx.save();
+        ctx.shadowColor = 'transparent';
+        ctx.shadowBlur = 0;
+        ctx.filter = 'none';
+        ctx.imageSmoothingEnabled = false;
+        ctx.restore();
+      }
+    };
+    Chart.register(NoShadow);
+
+    let chartsReady=false;
+    function drawCharts(){
+      if(chartsReady) return; chartsReady=true;
+      const baseOpts={responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#fff'}}}};
+
+      // Pie
+      const pie=document.getElementById('pieChart');
+      if(pie){
+        new Chart(pie,{
+          type:'doughnut',
+          data:{labels:['Positive','Negative','Neutral'],
+            datasets:[{data:[SENT_COUNTS.Positive,SENT_COUNTS.Negative,SENT_COUNTS.Neutral],
+            backgroundColor:['#28a745','#ff4d4d','#e9ecef'],borderWidth:0}]},
+          options:baseOpts
+        });
+      }
+
+      // Bar
+      const bar=document.getElementById('aspectBar');
+      if(bar){
+        const lbls=(ASPECT_STATS||[]).map(a=>a.aspect);
+        new Chart(bar,{
+          type:'bar',
+          data:{labels:lbls,
+            datasets:[
+              {label:'Positive',data:ASPECT_STATS.map(a=>a.positive),backgroundColor:'#28a745'},
+              {label:'Negative',data:ASPECT_STATS.map(a=>a.negative),backgroundColor:'#ff4d4d'},
+              {label:'Neutral', data:ASPECT_STATS.map(a=>a.neutral), backgroundColor:'#e9ecef'}
+            ]},
+          options:{...baseOpts,scales:{x:{ticks:{color:'#cbd5e1'},grid:{display:false}},y:{ticks:{color:'#cbd5e1'},grid:{color:'rgba(255,255,255,0.08)'}}}}
+        });
+      }
+
+      // Line (no fill, no shadow)
+      const line=document.getElementById('trendLine');
+      if(line){
+        const ctx=line.getContext('2d');
+        ctx.imageSmoothingEnabled=false; ctx.shadowColor='transparent'; ctx.shadowBlur=0; ctx.filter='none';
+        new Chart(ctx,{
+          type:'line',
+          data:{labels:TREND_LABELS||[],
+            datasets:[
+              {label:'Positive',data:TREND_POS,borderColor:'#28a745',backgroundColor:'rgba(0,0,0,0)',borderWidth:3,fill:false,tension:0.3,pointRadius:4,pointBackgroundColor:'#28a745'},
+              {label:'Negative',data:TREND_NEG,borderColor:'#ff4d4d',backgroundColor:'rgba(0,0,0,0)',borderWidth:3,fill:false,tension:0.3,pointRadius:4,pointBackgroundColor:'#ff4d4d'},
+              {label:'Neutral', data:TREND_NEU,borderColor:'#e9ecef',backgroundColor:'rgba(0,0,0,0)',borderWidth:3,fill:false,tension:0.3,pointRadius:4,pointBackgroundColor:'#e9ecef'}
+            ]},
+          options:{...baseOpts,scales:{x:{ticks:{color:'#cbd5e1'},grid:{display:false}},y:{ticks:{color:'#cbd5e1'},grid:{color:'rgba(255,255,255,0.08)'}}}}
+        });
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded',()=>{
+      const tab=document.querySelector('button[data-bs-target="#tab-insights"]');
+      if(tab){tab.addEventListener('shown.bs.tab',drawCharts);}
+    });
+  </script>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

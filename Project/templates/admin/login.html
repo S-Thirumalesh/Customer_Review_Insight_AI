@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Admin Login</title>
+
+  <!-- Bootstrap -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <style>
+    body {
+      background: linear-gradient(135deg, #1a2a6c, #185a9d, #43cea2);
+      height: 100vh;
+      margin: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: "Segoe UI", sans-serif;
+    }
+    .container-login {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 40px;
+      align-items: center;
+      max-width: 1000px;
+      width: 100%;
+      padding: 20px;
+    }
+    .info-side h2 {
+      color: #fff;
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 15px;
+    }
+    .info-side p {
+      color: #e9eef6;
+      font-size: 1.1rem;
+      line-height: 1.6;
+    }
+    .login-card {
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 14px;
+      padding: 35px 28px;
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+      width: 100%;
+      max-width: 420px;
+      text-align: center;
+    }
+    .login-card h3 {
+      font-weight: 600;
+      margin-bottom: 22px;
+      color: #185a9d;
+    }
+    .input-group-text {
+      background: #f1f1f1;
+      border: none;
+    }
+    .form-control {
+      border-radius: 8px;
+      padding: 10px;
+      border: 1px solid #ccc;
+      transition: all 0.3s ease;
+    }
+    .form-control:focus {
+      border-color: #185a9d;
+      box-shadow: 0 0 6px rgba(24, 90, 157, 0.4);
+    }
+    .btn-login {
+      background: #e63946;
+      border: none;
+      width: 100%;
+      padding: 10px;
+      border-radius: 8px;
+      font-weight: 600;
+      color: #fff;
+      transition: 0.3s ease;
+      margin-top: 8px;
+    }
+    .btn-login:hover {
+      background: #c82333;
+      transform: scale(1.02);
+    }
+    .back-home {
+      margin-top: 15px;
+      font-size: 0.9rem;
+    }
+    .back-home a {
+      text-decoration: none;
+      color: #185a9d;
+      font-weight: 500;
+      transition: 0.3s;
+    }
+    .back-home a:hover {
+      color: #0f3c75;
+      text-decoration: underline;
+    }
+    .error-message {
+      color: red;
+      font-size: 0.9rem;
+      margin-top: 5px;
+      text-align: left;
+      display: none;
+    }
+    @media(max-width: 900px) {
+      .container-login {
+        grid-template-columns: 1fr;
+        text-align: center;
+      }
+      .info-side { margin-bottom: 20px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container-login">
+    <!-- Left Info Section -->
+    <div class="info-side">
+      <h2>👨‍💼 Admin Portal</h2>
+      <p>
+        🚀 Manage your <strong>users</strong>, <strong>datasets</strong> and 
+        📊 <strong>analytics</strong> from here.<br>
+        🔒 Secure access for <em>administrators only</em>!  
+        👉 Enter your credentials to proceed.
+      </p>
+    </div>
+
+    <!-- Right Login Box -->
+    <div class="login-card">
+      <h3>Admin Login</h3>
+
+      <form id="adminLoginForm" method="post">
+        <!-- Username -->
+        <div class="mb-3 text-start">
+          <label class="form-label">Username</label>
+          <div class="input-group">
+            <span class="input-group-text">👤</span>
+            <input name="username" id="username" class="form-control" placeholder="Enter admin username">
+          </div>
+          <div id="userError" class="error-message">⚠️ Please enter username</div>
+        </div>
+
+        <!-- Password -->
+        <div class="mb-3 text-start">
+          <label class="form-label">Password</label>
+          <div class="input-group">
+            <span class="input-group-text">🔒</span>
+            <input name="password" id="password" class="form-control" type="password" placeholder="Enter password">
+          </div>
+          <div id="passError" class="error-message">⚠️ Please enter password</div>
+        </div>
+
+        <button class="btn btn-login" type="submit">Login as Admin</button>
+      </form>
+
+      <div class="back-home">
+        <a href="{{ url_for('index') }}">← Back to Home</a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Client-side validation
+    document.getElementById("adminLoginForm").addEventListener("submit", function(event) {
+      const user = document.getElementById("username").value.trim();
+      const pass = document.getElementById("password").value.trim();
+      const userError = document.getElementById("userError");
+      const passError = document.getElementById("passError");
+
+      let valid = true;
+
+      if (!user) {
+        userError.style.display = "block";
+        valid = false;
+      } else {
+        userError.style.display = "none";
+      }
+
+      if (!pass) {
+        passError.style.display = "block";
+        valid = false;
+      } else {
+        passError.style.display = "none";
+      }
+
+      if (!valid) {
+        event.preventDefault();
+      }
+    });
+  </script>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

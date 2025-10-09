@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>User Dashboard</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <style>
+    body {
+      background: linear-gradient(135deg, #1a2a6c, #16222a, #0f2027);
+      font-family: "Segoe UI", sans-serif;
+      color: white;
+      margin: 0;
+      padding: 0;
+    }
+    .top-bar { display: flex; justify-content: flex-end; padding: 15px 30px; }
+    .logout-btn {
+      background: #ff4d4d; border: none; padding: 10px 18px;
+      border-radius: 8px; font-weight: 600; color: #fff;
+      transition: all 0.3s ease; text-decoration: none;
+    }
+    .logout-btn:hover { background: #ff1a1a; transform: scale(1.05); }
+
+    .dashboard-container { max-width: 1100px; margin: auto; padding: 20px; }
+    .welcome { font-size: 1.8rem; font-weight: bold; margin-bottom: 20px; }
+
+    .stats { display: flex; gap: 20px; margin-bottom: 25px; }
+    .stat-card {
+      flex: 1; background: rgba(255, 255, 255, 0.08); border-radius: 15px;
+      padding: 20px; text-align: center; backdrop-filter: blur(10px);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.6); transition: all 0.3s ease;
+    }
+    .stat-card:hover { transform: translateY(-5px); box-shadow: 0 12px 28px rgba(0, 0, 0, 0.8); }
+    .stat-card h3 { font-size: 2rem; margin: 0; color: #ffca28; }
+    .stat-card p { margin: 5px 0 0; color: #ddd; }
+
+    .upload-section {
+      background: rgba(255, 255, 255, 0.08); padding: 25px; border-radius: 15px;
+      margin-bottom: 30px; box-shadow: 0 8px 20px rgba(0,0,0,0.6);
+    }
+    .upload-section h4 { margin-bottom: 15px; font-weight: 600; }
+    .upload-section input, .upload-section button { margin-top: 10px; }
+
+    .recent-section h5 { margin-bottom: 15px; font-weight: 600; }
+    .list-group-item {
+      background: rgba(255,255,255,0.05); border: none; color: white;
+      margin-bottom: 8px; border-radius: 10px; padding: 15px;
+      display: flex; justify-content: space-between; align-items: center;
+      transition: all 0.3s ease;
+    }
+    .list-group-item:hover { background: rgba(255,255,255,0.12); transform: scale(1.01); }
+    .list-group-item .btn { border-radius: 8px; padding: 5px 12px; }
+
+    .start-analysis-btn {
+      width: 100%; padding: 15px; font-size: 1.2rem; font-weight: 600;
+      background: linear-gradient(to right, #43cea2, #185a9d);
+      border: none; border-radius: 12px; color: #fff; margin-top: 20px;
+      transition: all 0.3s ease;
+    }
+    .start-analysis-btn:hover { transform: scale(1.05); box-shadow: 0 8px 22px rgba(67, 206, 162, 0.5); }
+  </style>
+</head>
+<body>
+  <!-- Top bar with logout -->
+  <div class="top-bar">
+    <a href="{{ url_for('logout') }}" class="logout-btn">🚪 Logout</a>
+  </div>
+
+  <div class="dashboard-container">
+    <div class="welcome">Welcome, {{ current_user.name }} 👋</div>
+
+    <!-- Stats -->
+    <div class="stats">
+      <div class="stat-card">
+        <h3>{{ datasets_count }}</h3>
+        <p>Datasets Uploaded</p>
+      </div>
+      <div class="stat-card">
+        <h3>{{ reviews_count }}</h3>
+        <p>Reviews Analyzed</p>
+      </div>
+  <!-- ✅ New: Overall Confidence -->
+  <div class="stat-card">
+    <h3>{{ avg_confidence }}%</h3>
+    <p>Overall Confidence</p>
+  </div>
+</div>
+
+    <!-- Upload Section -->
+    <div class="upload-section">
+      <h4>📤 Upload or Enter Review</h4>
+      <form method="post" action="{{ url_for('dashboard') }}" enctype="multipart/form-data">
+        <label class="form-label">Upload Dataset (CSV/TXT)</label>
+        <input class="form-control" type="file" name="file">
+
+        <label class="form-label mt-3">Or Add a Single Raw Review</label>
+        <input class="form-control" type="text" name="raw_review" placeholder="Type your review here">
+
+        <button class="btn btn-success w-100 mt-3" type="submit">Submit</button>
+      </form>
+
+      {% if uploads %}
+        <a href="{{ url_for('analysis_all') }}">
+          <button class="start-analysis-btn">🚀 Start Analysis</button>
+        </a>
+      {% else %}
+        <button class="start-analysis-btn" disabled>🚀 Start Analysis (No Data)</button>
+      {% endif %}
+    </div>
+
+    <!-- Recent Uploads -->
+    <div class="recent-section">
+      <h5>📂 Recent Uploads</h5>
+      <ul class="list-group">
+        {% for ds in uploads %}
+          <li class="list-group-item">
+            {{ ds.file_name }}
+            <div>
+               <a class="btn btn-sm btn-outline-warning ms-1" href="{{ url_for('dataset_analysis', dataset_id=ds.id) }}">Analyze</a>
+            </div>
+          </li>
+        {% else %}
+          <li class="list-group-item">No uploads yet</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+
+  <!-- ✅ Toast for login success -->
+  <div class="toast-container position-fixed bottom-0 end-0 p-3">
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <div id="loginToast" class="toast align-items-center text-bg-success border-0" role="alert" data-bs-delay="4000" data-bs-autohide="true">
+          <div class="d-flex">
+            <div class="toast-body">
+              {{ messages[0] }}
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+          </div>
+        </div>
+      {% endif %}
+    {% endwith %}
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      const toastEl = document.getElementById('loginToast');
+      if (toastEl) {
+        const toast = new bootstrap.Toast(toastEl);
+        toast.show();  // ✅ Auto shows, hides after 4s
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sentiment Analysis App</title>
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #1a2a6c, #16222a, #0f2027);
+      color: white;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .content-box {
+      max-width: 1200px;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 2rem;
+    }
+
+    .left-section h1 {
+      font-size: 3rem;
+      font-weight: bold;
+      color: #ffffff;
+    }
+
+    .left-section p {
+      font-size: 1.2rem;
+      margin: 15px 0;
+      color: #d1d1d1;
+    }
+
+    .login-box {
+      margin-top: 20px;
+      padding: 25px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 15px;
+      box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.5);
+      text-align: center;
+    }
+
+    .login-box a {
+      display: block;
+      margin: 10px 0;
+      padding: 12px 20px;
+      border-radius: 10px;
+      font-size: 1.1rem;
+      font-weight: 500;
+      text-decoration: none;
+      transition: all 0.3s ease;
+    }
+
+    .user-btn {
+      background: #007bff;
+      color: white;
+    }
+
+    .user-btn:hover {
+      background: #0056b3;
+      transform: scale(1.05);
+    }
+
+    .admin-btn {
+      background: transparent;
+      border: 2px solid #ffffff;
+      color: white;
+    }
+
+    .admin-btn:hover {
+      background: #ffffff;
+      color: #000000;
+      transform: scale(1.05);
+    }
+
+    .carousel img {
+      border-radius: 15px;
+      max-height: 350px;
+      object-fit: contain;
+      filter: brightness(0.8) contrast(1.1); /* dark mode effect */
+    }
+    .carousel-item {
+      background: #1e1e1e; /* dark card behind image */
+      padding: 20px;
+      border-radius: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container content-box">
+    <!-- Left Section -->
+    <div class="left-section">
+      <h1>📊 Sentiment Analysis Platform</h1>
+      <p>
+        Analyze customer reviews, gain insights, and make better business decisions <br>
+        with our sentiment analysis dashboard.
+      </p>
+      <div class="login-box">
+        <a href="{{ url_for('login') }}" class="user-btn">👤 User Login</a>
+        <a href="{{ url_for('admin_login') }}" class="admin-btn">⚙️ Admin Login</a>
+      </div>
+    </div>
+
+    <!-- Right Section (Carousel) -->
+    <div class="right-section col-md-6">
+      <div id="chartCarousel" class="carousel slide" data-bs-ride="carousel" data-bs-interval="2000">
+        <div class="carousel-inner">
+          <!-- Pie Chart -->
+          <div class="carousel-item active">
+            <img src="{{ url_for('static', filename='pie.png') }}" class="d-block w-100" alt="Pie Chart">
+          </div>
+          <!-- Bar Chart -->
+          <div class="carousel-item">
+            <img src="{{ url_for('static', filename='bar.png') }}" class="d-block w-100" alt="Bar Chart">
+          </div>
+          <!-- Line Chart -->
+          <div class="carousel-item">
+            <img src="{{ url_for('static', filename='line.png') }}" class="d-block w-100" alt="Line Chart">
+          </div>
+        </div>
+        <!-- Controls -->
+        <button class="carousel-control-prev" type="button" data-bs-target="#chartCarousel" data-bs-slide="prev">
+          <span class="carousel-control-prev-icon"></span>
+        </button>
+        <button class="carousel-control-next" type="button" data-bs-target="#chartCarousel" data-bs-slide="next">
+          <span class="carousel-control-next-icon"></span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

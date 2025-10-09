@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Admin — Users</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <style>
+    :root{
+      --bg1:#0f1724;
+      --bg2:#102033;
+      --card: rgba(255,255,255,0.03);
+      --muted:#aeb6c2;
+      --accent:#43cea2;
+    }
+    html,body{height:100%;margin:0;font-family:"Segoe UI",sans-serif;background:linear-gradient(135deg,var(--bg1),var(--bg2));color:#fff}
+    .wrap{max-width:1200px;margin:28px auto;padding:22px}
+    .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+    .title{font-size:1.35rem;font-weight:700}
+    .logout-btn{background:#ff4d4d;border:none;color:#fff;padding:8px 12px;border-radius:8px;text-decoration:none}
+    .card-panel{background:var(--card);padding:16px;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.45)}
+    table.data-table{width:100%;border-collapse:collapse}
+    table.data-table thead th{color:var(--muted);font-weight:600;padding:12px;border-bottom:1px solid rgba(255,255,255,0.04);text-align:left}
+    table.data-table tbody td{padding:12px;border-bottom:1px solid rgba(255,255,255,0.02);vertical-align:middle}
+    .small-muted{color:var(--muted)}
+    .action-btn{margin-right:6px}
+    .search-row{display:flex;gap:8px;align-items:center;margin-bottom:12px}
+    .form-control-dark{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.04);color:#fff;border-radius:8px;padding:8px}
+    .badge-stat{background:linear-gradient(90deg,var(--accent),#185a9d);padding:8px 12px;border-radius:10px;color:#fff;font-weight:700}
+    .muted-note{color:#9aa6b8;font-size:0.9rem}
+    @media (max-width:900px){
+      .topbar{flex-direction:column;align-items:flex-start;gap:8px}
+      .search-row{flex-direction:column;align-items:stretch}
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <div>
+        <div class="title">Admin — User Management</div>
+        <div class="small-muted">Overview • View and manage registered users</div>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center">
+        <a href="{{ url_for('index') }}" class="btn btn-outline-light">🏠 Main</a>
+        <a href="{{ url_for('logout') }}" class="logout-btn">🚪 Logout</a>
+      </div>
+    </div>
+
+    <div class="card-panel mb-3">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+        <div style="display:flex;gap:12px;align-items:center">
+          <div class="badge-stat">Users: {{ users|length if users is defined else 0 }}</div>
+          <div class="muted-note">Manage accounts, inspect datasets & activity</div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input id="searchInput" class="form-control-dark" placeholder="Search by name or email..." style="width:320px">
+          <a href="/admin/users/export" class="btn btn-outline-light">📄 Export</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="card-panel">
+      <div class="search-row">
+        <div class="small-muted">Sort / filter:</div>
+        <select id="filterRole" class="form-control form-control-sm form-control-dark" style="width:180px">
+          <option value="">All roles</option>
+          <option value="user">Users</option>
+          <option value="admin">Admins</option>
+        </select>
+        <div style="margin-left:auto" class="small-muted">Click actions to view or manage user</div>
+      </div>
+
+      <div style="overflow:auto">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th style="width:6%">ID</th>
+              <th style="width:22%">Name</th>
+              <th style="width:26%">Email</th>
+              <th style="width:12%">Datasets</th>
+              <th style="width:18%">Last Active</th>
+              <th style="width:16%">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="usersBody">
+            {% for user in users %}
+            <tr data-role="{{ user.role or 'user' }}">
+              <td>#{{ user.id }}</td>
+              <td>{{ user.name or '-' }}</td>
+              <td>{{ user.email or '-' }}</td>
+              <td>{{ user.datasets|length if user.datasets is defined else 0 }}</td>
+              <td>
+                {% if user.last_active %}
+                  {{ user.last_active.strftime('%Y-%m-%d %H:%M') }}
+                {% else %}
+                  <span class="small-muted">—</span>
+                {% endif %}
+              </td>
+              <td>
+                <!-- Use direct hrefs so template rendering doesn't require extra app routes -->
+                <a class="btn btn-sm btn-outline-light action-btn" href="/admin/users/{{ user.id }}/view">👁️ View</a>
+              </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="6" class="small-muted">No users found.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <div style="margin-top:12px;display:flex;justify-content:space-between;align-items:center">
+        <div class="small-muted">Tip: use View to inspect user's datasets & reports</div>
+        <div class="small-muted">Showing <strong id="shownCount">{{ users|length if users is defined else 0 }}</strong> users</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // client-side search + filter (no server calls)
+    const searchInput = document.getElementById('searchInput');
+    const filterRole = document.getElementById('filterRole');
+    const usersBody = document.getElementById('usersBody');
+    const shownCount = document.getElementById('shownCount');
+
+    function updateShownCount() {
+      shownCount.textContent = usersBody.querySelectorAll('tr:not([hidden])').length;
+    }
+
+    function applyFilters() {
+      const q = (searchInput.value || '').trim().toLowerCase();
+      const role = filterRole.value;
+      Array.from(usersBody.querySelectorAll('tr')).forEach(row => {
+        const txt = row.innerText.toLowerCase();
+        const matchesQ = q === '' || txt.includes(q);
+        const matchesRole = !role || (row.dataset.role === role);
+        row.hidden = !(matchesQ && matchesRole);
+      });
+      updateShownCount();
+    }
+
+    searchInput?.addEventListener('input', applyFilters);
+    filterRole?.addEventListener('change', applyFilters);
+    document.addEventListener('DOMContentLoaded', updateShownCount);
+  </script>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

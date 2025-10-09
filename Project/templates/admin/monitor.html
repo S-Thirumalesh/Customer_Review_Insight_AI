@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Admin — System Monitoring</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body { background:#0f1724; color:#fff; font-family:Segoe UI, sans-serif; padding:28px; }
+    .card { background:rgba(255,255,255,0.05); border:none; margin-bottom:18px; }
+    .stat-card { display:flex; justify-content:space-between; align-items:center; transition:all 0.3s ease; }
+    .stat-label { font-size:1.1rem; font-weight:600; color:#f1f1f1; }  /* brighter */
+    .stat-value { font-size:1.8rem; font-weight:800; color:#43cea2; } /* bright green accent */
+    .stat-card:hover { box-shadow:0 0 18px rgba(67,206,162,0.6); transform:translateY(-2px); }
+    h5 { font-weight:700; color:#fff; } /* brighter section headings */
+    .table td, .table th { color:#fff; }
+    .muted { color:#aeb6c2; font-size:0.9rem; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h3 style="font-weight:700;color:#43cea2">📊 System Monitoring</h3>
+      <a class="btn btn-danger" href="{{ url_for('logout') }}">Logout</a>
+    </div>
+
+    <!-- System Stats -->
+    <div class="row mb-3">
+      <div class="col-md-4">
+        <div class="card p-3 stat-card">
+          <div class="stat-label">👥 Users</div>
+          <div class="stat-value">{{ users_count }}</div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card p-3 stat-card">
+          <div class="stat-label">📂 Datasets</div>
+          <div class="stat-value">{{ datasets_count }}</div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card p-3 stat-card">
+          <div class="stat-label">📝 Reviews</div>
+          <div class="stat-value">{{ reviews_count }}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Performance Logs -->
+    <div class="card p-3">
+      <h5>⚡ Performance Logs</h5>
+      <table class="table table-sm table-dark mt-2">
+        <thead><tr><th>Dataset</th><th>Reviews</th><th>Processing Time</th><th>Date</th></tr></thead>
+        <tbody>
+          {% for p in performance_logs %}
+            <tr>
+              <td>{{ p.file_name }}</td>
+              <td>{{ p.reviews }}</td>
+              <td>{{ p.time }}s</td>
+              <td>{{ p.date }}</td>
+            </tr>
+          {% else %}
+            <tr><td colspan="4" class="muted">No performance data.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Recent Logs -->
+    <div class="card p-3">
+      <h5>📜 Recent Activity</h5>
+      <ul class="list-group list-group-flush">
+        {% for l in recent_logs %}
+          <li class="list-group-item bg-transparent text-light">
+            {{ l.timestamp.strftime('%Y-%m-%d %H:%M') if l.timestamp else '' }} — {{ l.action_type }}
+          </li>
+        {% else %}
+          <li class="list-group-item bg-transparent text-muted">No recent activity.</li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    <!-- Model Accuracy Check -->
+    <div class="card p-3">
+      <h5>🤖 Model Accuracy Check (Samples)</h5>
+      <table class="table table-sm table-dark mt-2">
+        <thead><tr><th>Review</th><th>Predicted Sentiment</th><th>Aspect</th></tr></thead>
+        <tbody>
+          {% for r in sample_reviews %}
+            <tr>
+              <td>{{ r.raw_text[:80] }}{% if r.raw_text|length > 80 %}...{% endif %}</td>
+              <td>
+                {% if r.sentiment == "Positive" %}
+                  <span class="badge bg-success">{{ r.sentiment }}</span>
+                {% elif r.sentiment == "Negative" %}
+                  <span class="badge bg-danger">{{ r.sentiment }}</span>
+                {% else %}
+                  <span class="badge bg-warning text-dark">{{ r.sentiment }}</span>
+                {% endif %}
+              </td>
+              <td>{{ r.aspect or '—' }}</td>
+            </tr>
+          {% else %}
+            <tr><td colspan="3" class="muted">No sample reviews available.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div><a href="/admin" class="btn btn-outline-light">← Back</a></div>
+  </div>
+</body>
+</html>

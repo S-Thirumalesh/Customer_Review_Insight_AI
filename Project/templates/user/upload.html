@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% block title %}Upload Dataset{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-6">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h5 class="card-title mb-3">Upload CSV / TXT</h5>
+        <form method="post" enctype="multipart/form-data">
+          <div class="mb-3">
+            <input type="file" name="file" class="form-control" accept=".csv,.txt" required>
+          </div>
+          <button class="btn btn-primary" type="submit">Upload</button>
+          <a class="btn btn-link" href="{{ url_for('dashboard') }}">Cancel</a>
+        </form>
+        <small class="text-muted mt-2 d-block">CSV should have a column named <code>review</code> or the first column will be used.</small>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
