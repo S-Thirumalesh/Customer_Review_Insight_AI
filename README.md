@@ -184,8 +184,8 @@ Add Multi-language support
 👩‍💻 Lakshmi Akhila Singamsetty and team 
 Fourth-Year Engineering Student | Passionate about AI, NLP, and Web Development
 
-📧 Email: akhilasingamsetty585@gmail.com
-🌐 GitHub: https://github.com/singamsetty2020
+📧 Email: thirumalesh9360@gmail.com
+🌐 GitHub: https://www.linkedin.com/in/s-thirumalesh/
 
 🏁 Conclusion
 
