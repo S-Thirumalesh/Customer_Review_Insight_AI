@@ -185,7 +185,7 @@ Add Multi-language support
 Fourth-Year Engineering Student | Passionate about AI, NLP, and Web Development
 
 📧 Email: thirumalesh9360@gmail.com
-🌐 GitHub: https://www.linkedin.com/in/s-thirumalesh/
+🌐 LinkedIn: https://www.linkedin.com/in/s-thirumalesh/
 
 🏁 Conclusion
 
