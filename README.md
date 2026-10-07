@@ -181,7 +181,7 @@ Add Multi-language support
 
 🧑‍💻 Author
 
-👩‍💻 Lakshmi Akhila Singamsetty and team 
+👩‍💻 Thirumalesh S and team 
 Fourth-Year Engineering Student | Passionate about AI, NLP, and Web Development
 
 📧 Email: thirumalesh9360@gmail.com
